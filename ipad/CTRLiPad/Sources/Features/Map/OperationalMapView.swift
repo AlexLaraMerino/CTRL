@@ -15,7 +15,7 @@ struct OperationalMapView: View {
 
     var body: some View {
         MapReader { proxy in
-            ZStack(alignment: .bottomTrailing) {
+            ZStack {
                 Map(position: $position) {
                     ForEach(visibleWorkSites) { workSite in
                         Annotation(workSite.city, coordinate: workSite.coordinate) {
@@ -91,20 +91,28 @@ struct OperationalMapView: View {
                     }
                 }
 
-                VStack(spacing: 10) {
-                    MapStat(label: "Obras", value: "\(visibleWorkSites.count)")
-                    MapStat(label: "Operarios", value: "\(displayedEmployees.count)")
+                VStack {
+                    Spacer()
+                    HStack {
+                        VStack(spacing: 10) {
+                            MapStat(label: "Obras", value: "\(visibleWorkSites.count)")
+                            MapStat(label: "Operarios", value: "\(displayedEmployees.count)")
+                        }
+                        .padding(.leading, 16)
+                        .padding(.bottom, 24)
+
+                        Spacer()
+                    }
                 }
-                .padding(16)
 
                 if let relocatingEmployee = selectedEmployeeForPlacement {
                     PlacementHint(
                         employee: relocatingEmployee,
                         hoveredWorkSite: hoveredWorkSite
                     )
-                        .padding(.leading, 16)
+                        .padding(.trailing, 16)
                         .padding(.bottom, 24)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 }
             }
         }

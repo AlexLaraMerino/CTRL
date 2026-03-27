@@ -155,6 +155,8 @@ private struct MainMapView: View {
                         )
                         .padding(.trailing, 16)
                         .padding(.bottom, 22)
+                        .opacity(store.leftPanelVisible || store.rightPanel != .none ? 0 : 1)
+                        .allowsHitTesting(!(store.leftPanelVisible || store.rightPanel != .none))
                     }
                 }
             }
@@ -396,38 +398,40 @@ private struct EmployeeRow: View {
                     .padding(.vertical, 14)
                     .background(Color.ctrlPanel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                HStack(spacing: 10) {
-                    EmployeeActionCard(
-                        icon: "hand.draw.fill",
-                        title: "Colocar",
-                        description: "Seleccionar y llevar al mapa"
-                    ) {
-                        store.rightPanel = .none
-                        store.prepareRelocation(for: employee.id)
-                    }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        EmployeeActionCard(
+                            icon: "hand.draw.fill",
+                            title: "Colocar",
+                            description: "Seleccionar y llevar al mapa"
+                        ) {
+                            store.rightPanel = .none
+                            store.prepareRelocation(for: employee.id)
+                        }
 
-                    EmployeeActionCard(
-                        icon: "pencil",
-                        title: "Guardar",
-                        description: "Actualizar nombre"
-                    ) {
-                        store.updateEmployeeName(employee.id, name: draft)
-                    }
+                        EmployeeActionCard(
+                            icon: "pencil",
+                            title: "Guardar",
+                            description: "Actualizar nombre"
+                        ) {
+                            store.updateEmployeeName(employee.id, name: draft)
+                        }
 
-                    EmployeeActionCard(
-                        icon: "moon.zzz.fill",
-                        title: store.isEmployeeAbsent(employee.id) ? "Activar hoy" : "Ausencia",
-                        description: store.isEmployeeAbsent(employee.id) ? "Volver al mapa hoy" : "Ocultarlo solo hoy"
-                    ) {
-                        store.toggleEmployeeAbsence(employee.id)
-                    }
+                        EmployeeActionCard(
+                            icon: "moon.zzz.fill",
+                            title: store.isEmployeeAbsent(employee.id) ? "Activar hoy" : "Ausencia",
+                            description: store.isEmployeeAbsent(employee.id) ? "Volver al mapa hoy" : "Ocultarlo solo hoy"
+                        ) {
+                            store.toggleEmployeeAbsence(employee.id)
+                        }
 
-                    EmployeeActionCard(
-                        icon: "pause.circle.fill",
-                        title: "Desactivar",
-                        description: "Mover a inactivos"
-                    ) {
-                        store.setEmployeeActive(employee.id, isActive: false)
+                        EmployeeActionCard(
+                            icon: "pause.circle.fill",
+                            title: "Desactivar",
+                            description: "Mover a inactivos"
+                        ) {
+                            store.setEmployeeActive(employee.id, isActive: false)
+                        }
                     }
                 }
             }
@@ -492,7 +496,8 @@ private struct EmployeeActionCard: View {
                     .foregroundStyle(Color.ctrlMuted)
                     .multilineTextAlignment(.leading)
             }
-            .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            .frame(width: 150, alignment: .topLeading)
+            .frame(minHeight: 112, alignment: .topLeading)
             .padding(12)
             .background(Color.ctrlPanel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
@@ -708,44 +713,48 @@ private struct WorkSiteRow: View {
                     .padding(14)
                     .background(Color.ctrlPanel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
-                    HStack(spacing: 10) {
-                        WorkSiteActionCard(
-                            icon: "pencil",
-                            title: "Modificar",
-                            description: "Guardar nombre y ubicación"
-                        ) {
-                            store.updateWorkSite(
-                                workSite.id,
-                                name: nameDraft,
-                                city: cityDraft,
-                                addressLine: addressDraft
-                            )
-                        }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            WorkSiteActionCard(
+                                icon: "pencil",
+                                title: "Modificar",
+                                description: "Guardar nombre y ubicación"
+                            ) {
+                                Task {
+                                    await store.updateWorkSite(
+                                        workSite.id,
+                                        name: nameDraft,
+                                        city: cityDraft,
+                                        addressLine: addressDraft
+                                    )
+                                }
+                            }
 
-                        WorkSiteActionCard(
-                            icon: "pause.circle.fill",
-                            title: "Desactivar",
-                            description: "Mover a inactivas"
-                        ) {
-                            store.setWorkSiteActive(workSite.id, isActive: false)
-                        }
+                            WorkSiteActionCard(
+                                icon: "pause.circle.fill",
+                                title: "Desactivar",
+                                description: "Mover a inactivas"
+                            ) {
+                                store.setWorkSiteActive(workSite.id, isActive: false)
+                            }
 
-                        WorkSiteActionCard(
-                            icon: "folder.fill",
-                            title: "Archivo",
-                            description: "Próximamente"
-                        ) {
-                            store.rightPanel = .none
-                            store.openManagement(section: .archive, workSiteId: workSite.id)
-                        }
+                            WorkSiteActionCard(
+                                icon: "folder.fill",
+                                title: "Archivo",
+                                description: "Abrir archivo"
+                            ) {
+                                store.rightPanel = .none
+                                store.openManagement(section: .archive, workSiteId: workSite.id)
+                            }
 
-                        WorkSiteActionCard(
-                            icon: "clock.arrow.circlepath",
-                            title: "Historial",
-                            description: "Próximamente"
-                        ) {
-                            store.rightPanel = .none
-                            store.openManagement(section: .history, workSiteId: workSite.id)
+                            WorkSiteActionCard(
+                                icon: "clock.arrow.circlepath",
+                                title: "Historial",
+                                description: "Ver eventos"
+                            ) {
+                                store.rightPanel = .none
+                                store.openManagement(section: .history, workSiteId: workSite.id)
+                            }
                         }
                     }
                 }
@@ -811,7 +820,8 @@ private struct WorkSiteActionCard: View {
                     .foregroundStyle(Color.ctrlMuted)
                     .multilineTextAlignment(.leading)
             }
-            .frame(maxWidth: .infinity, minHeight: 112, alignment: .topLeading)
+            .frame(width: 150, alignment: .topLeading)
+            .frame(minHeight: 112, alignment: .topLeading)
             .padding(12)
             .background(Color.ctrlPanel, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
@@ -857,10 +867,12 @@ private struct NewWorkSiteRow: View {
                     .background(Color.ctrlPanelSoft, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
 
                 Button("Crear") {
-                    store.addWorkSite(name: name, city: city, addressLine: address)
-                    city = ""
-                    address = ""
-                    name = ""
+                    Task {
+                        await store.addWorkSite(name: name, city: city, addressLine: address)
+                        city = ""
+                        address = ""
+                        name = ""
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.ctrlAccent)
