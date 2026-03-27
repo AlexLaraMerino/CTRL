@@ -1,0 +1,390 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		079621A3E2E7918BD9A21A39 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22AD009830047375DEEBB605 /* LoginView.swift */; };
+		0D71724D65941C0760FB98C6 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CA32B51E82B4D306F704E1 /* Theme.swift */; };
+		16DEB3D52214F8F075E91B3D /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53BD9ADB30A3904CDE9092A /* AppView.swift */; };
+		3FBEA277B8677764B6715EA0 /* DailyBoardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2344CCD98DB729A1F01475C4 /* DailyBoardStore.swift */; };
+		59C46B22BE7D0DCE6D7BF48C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87E5E80767603108E15D37B0 /* Models.swift */; };
+		5B33A92591947EA9E1AE41EC /* OrientationSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B4AEE5EE9B10EE8F58AB7F /* OrientationSupport.swift */; };
+		7B2156F7935E7A891A5FA46D /* CTRLiPadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D91CF14938148A18D3ADA800 /* CTRLiPadApp.swift */; };
+		8007003464ECF0EE6DA8B36A /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16BE8B6E63CB852E74CA5DF /* MockData.swift */; };
+		965DD4A7D3B7FACDA45D5BD2 /* OperationalMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EB857592A0204CED234E6F /* OperationalMapView.swift */; };
+		ED588DA10EB97C5159B42A4B /* ManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C454AA6EC0F91400CAC1289E /* ManagementView.swift */; };
+		F7C1EA022449AFC6F5B57BE9 /* DateSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0065EE1DFA69811366419D37 /* DateSupport.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0065EE1DFA69811366419D37 /* DateSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateSupport.swift; sourceTree = "<group>"; };
+		0B980E7970CFAC0B28614E42 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		22AD009830047375DEEBB605 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		2344CCD98DB729A1F01475C4 /* DailyBoardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBoardStore.swift; sourceTree = "<group>"; };
+		60B4AEE5EE9B10EE8F58AB7F /* OrientationSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationSupport.swift; sourceTree = "<group>"; };
+		6A8FA0095149187F99D4B5D6 /* CTRLiPad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CTRLiPad.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		71EB857592A0204CED234E6F /* OperationalMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationalMapView.swift; sourceTree = "<group>"; };
+		87E5E80767603108E15D37B0 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		C16BE8B6E63CB852E74CA5DF /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
+		C454AA6EC0F91400CAC1289E /* ManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagementView.swift; sourceTree = "<group>"; };
+		C53BD9ADB30A3904CDE9092A /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
+		D91CF14938148A18D3ADA800 /* CTRLiPadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CTRLiPadApp.swift; sourceTree = "<group>"; };
+		E7CA32B51E82B4D306F704E1 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		04EDA9607AA9EDF402B01262 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				22AD009830047375DEEBB605 /* LoginView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		1B2EFEA5116C235179183012 /* Management */ = {
+			isa = PBXGroup;
+			children = (
+				C454AA6EC0F91400CAC1289E /* ManagementView.swift */,
+			);
+			path = Management;
+			sourceTree = "<group>";
+		};
+		203AFBE6581FD001AA7277F4 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				0B980E7970CFAC0B28614E42 /* Info.plist */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		3119EB71E22E871923B7678F /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				60B4AEE5EE9B10EE8F58AB7F /* OrientationSupport.swift */,
+				E7CA32B51E82B4D306F704E1 /* Theme.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		36FBE72A257AEB3831D917D1 /* Domain */ = {
+			isa = PBXGroup;
+			children = (
+				2344CCD98DB729A1F01475C4 /* DailyBoardStore.swift */,
+				0065EE1DFA69811366419D37 /* DateSupport.swift */,
+				C16BE8B6E63CB852E74CA5DF /* MockData.swift */,
+				87E5E80767603108E15D37B0 /* Models.swift */,
+			);
+			path = Domain;
+			sourceTree = "<group>";
+		};
+		8E2FC8B66631706068417CAF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6A8FA0095149187F99D4B5D6 /* CTRLiPad.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA3143BA34F4B4835B1BDE40 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C53BD9ADB30A3904CDE9092A /* AppView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		BB86303D41B3304C32F185D7 = {
+			isa = PBXGroup;
+			children = (
+				E7FE87788AA0AFE87ABDC618 /* Sources */,
+				8E2FC8B66631706068417CAF /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C9197A9D4E3A9235F461085B /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				71EB857592A0204CED234E6F /* OperationalMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		E7FE87788AA0AFE87ABDC618 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				D91CF14938148A18D3ADA800 /* CTRLiPadApp.swift */,
+				AA3143BA34F4B4835B1BDE40 /* App */,
+				36FBE72A257AEB3831D917D1 /* Domain */,
+				E9173CBD8773919ED95F6F19 /* Features */,
+				203AFBE6581FD001AA7277F4 /* Support */,
+				3119EB71E22E871923B7678F /* UI */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		E9173CBD8773919ED95F6F19 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				04EDA9607AA9EDF402B01262 /* Auth */,
+				1B2EFEA5116C235179183012 /* Management */,
+				C9197A9D4E3A9235F461085B /* Map */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D120613EF2BAA2C73A5E2ED8 /* CTRLiPad */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54BD2355D8ABF6821555292D /* Build configuration list for PBXNativeTarget "CTRLiPad" */;
+			buildPhases = (
+				7F72E0D0B006F579D6B2FB8E /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CTRLiPad;
+			packageProductDependencies = (
+			);
+			productName = CTRLiPad;
+			productReference = 6A8FA0095149187F99D4B5D6 /* CTRLiPad.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		82000C6FA244EE16DF60FB0F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = 465AD698A194B1A907E3FD01 /* Build configuration list for PBXProject "CTRLiPad" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = BB86303D41B3304C32F185D7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 8E2FC8B66631706068417CAF /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D120613EF2BAA2C73A5E2ED8 /* CTRLiPad */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7F72E0D0B006F579D6B2FB8E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16DEB3D52214F8F075E91B3D /* AppView.swift in Sources */,
+				7B2156F7935E7A891A5FA46D /* CTRLiPadApp.swift in Sources */,
+				3FBEA277B8677764B6715EA0 /* DailyBoardStore.swift in Sources */,
+				F7C1EA022449AFC6F5B57BE9 /* DateSupport.swift in Sources */,
+				079621A3E2E7918BD9A21A39 /* LoginView.swift in Sources */,
+				ED588DA10EB97C5159B42A4B /* ManagementView.swift in Sources */,
+				8007003464ECF0EE6DA8B36A /* MockData.swift in Sources */,
+				59C46B22BE7D0DCE6D7BF48C /* Models.swift in Sources */,
+				965DD4A7D3B7FACDA45D5BD2 /* OperationalMapView.swift in Sources */,
+				5B33A92591947EA9E1AE41EC /* OrientationSupport.swift in Sources */,
+				0D71724D65941C0760FB98C6 /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		3A0C360C2A19CC775D4C3936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = PC7SYLKHXJ;
+				INFOPLIST_FILE = Sources/Support/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = CTRLiPad;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3F91E80EC0FBA0527846018C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.almatechnologies.ctrliPad;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		485F2AA27F0644D5F5A34703 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.almatechnologies.ctrliPad;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		610EBB18119FB65936DEA387 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = PC7SYLKHXJ;
+				INFOPLIST_FILE = Sources/Support/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = CTRLiPad;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		465AD698A194B1A907E3FD01 /* Build configuration list for PBXProject "CTRLiPad" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				485F2AA27F0644D5F5A34703 /* Debug */,
+				3F91E80EC0FBA0527846018C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		54BD2355D8ABF6821555292D /* Build configuration list for PBXNativeTarget "CTRLiPad" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3A0C360C2A19CC775D4C3936 /* Debug */,
+				610EBB18119FB65936DEA387 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 82000C6FA244EE16DF60FB0F /* Project object */;
+}
