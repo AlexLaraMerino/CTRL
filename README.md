@@ -1,49 +1,69 @@
 # CTRL
 
-CTRL pasa a una nueva etapa: base nativa iPad-first para priorizar una UX táctil fluida sobre el mapa.
+Aplicación de gestión de obras y operarios — iPad + servidor privado.
 
-## Dirección actual
+## Arquitectura
 
-- Plataforma principal: `iPad`
-- Enfoque técnico: `SwiftUI + MapKit`
-- Persistencia inicial: local, simple y robusta
-- Dominio central: `DailyState` independiente por fecha
-
-## Estado del repositorio
-
-```text
+```
 CTRL/
-  docs/
-  frontend/        # base anterior Expo/React Native, mantenida como referencia
-  ipad/
-    CTRLiPad/
-      project.yml
-      README.md
-      Sources/
+  backend/           ← API REST (Python · FastAPI)
+    app/
+      models/        ← ORM SQLAlchemy (obras, operarios, asignaciones, planos, historial)
+      routers/       ← Endpoints REST
+      schemas/       ← Validación Pydantic
+      services/      ← Lógica de negocio
+      utils/         ← JWT, autenticación
+    tests/           ← Tests de integración
+    alembic/         ← Migraciones de BD
+  ios/               ← App iPad (SwiftUI) — pendiente
 ```
 
-## Nueva base nativa
+## Backend — Arranque rápido
 
-La nueva app iPad vive en:
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-`/Users/alex/Desktop/AlmaTechnologies/CTRL/ipad/CTRLiPad`
+# Migración inicial
+alembic upgrade head
 
-Incluye:
+# Arrancar servidor
+uvicorn app.main:app --reload
+```
 
-- estructura de proyecto para generar con `XcodeGen`
-- modelos nativos del dominio
-- store local-first
-- primera shell SwiftUI
-- mapa base con `MapKit`
-- paneles operativos para agenda, operarios y obras
+La API queda disponible en `http://localhost:8000` con Swagger en `/docs`.
 
-## Nota sobre la base anterior
+### Credenciales de desarrollo
 
-La carpeta `frontend/` no se elimina por ahora. Se conserva como referencia funcional del MVP anterior y como apoyo para portar decisiones de dominio.
+| Usuario    | Contraseña |
+|------------|------------|
+| gerente    | ctrl2026   |
+| encargado  | ctrl2026   |
 
-## Siguiente foco
+### Tests
 
-1. generar y abrir el proyecto iPad en Xcode
-2. validar layout y persistencia local
-3. rehacer la interacción de operarios sobre el mapa con gesto iPad-first
-4. preparar más adelante la estrategia de PDF con `PDFKit + PencilKit`
+```bash
+cd backend
+source venv/bin/activate
+pytest tests/ -v
+```
+
+## Estado del proyecto
+
+| Fase | Descripción | Estado |
+|------|-------------|--------|
+| 1 — Núcleo backend | Modelos, auth JWT, CRUD, historial | Completada |
+| 2 — Mapa iOS | MapKit, chinchetas, barra superior | Pendiente |
+| 3 — Asignaciones iOS | Calendario, drag-and-drop, copiar día | Pendiente |
+| 4 — Planos | PDF + PencilKit, versionado | Pendiente |
+| 5 — Detalle y pulido | Vistas completas, historial, rutas | Pendiente |
+| 6 — Producción | Tests, HTTPS, despliegue Windows | Pendiente |
+
+## Tecnología
+
+- **Backend**: Python 3.11+ · FastAPI · SQLAlchemy · PostgreSQL/SQLite
+- **App iOS**: SwiftUI · MapKit · PDFKit · PencilKit (pendiente)
+- **Autenticación**: JWT
+- **Despliegue**: Windows Server (producción) · macOS (desarrollo)
