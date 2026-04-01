@@ -22,6 +22,18 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 ipad/CTRLiPad/CTRLiPad.xcodeproj/xcuserdata/
 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# Alembic
+backend/alembic/versions/*.pyc
+
 # Local env
 .env
 .env.*
