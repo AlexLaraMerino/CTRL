@@ -101,9 +101,8 @@ struct PlanoViewerView: View {
             return
         }
 
-        // Recoger los dibujos de cada página
-        let pageDrawings = await MainActor.run { coord.pageDrawings }
-        guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawings: pageDrawings) else {
+        let drawing = await MainActor.run { coord.drawing }
+        guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawing: drawing) else {
             saveError = "Error al generar PDF anotado"
             isSaving = false
             return
@@ -126,7 +125,7 @@ struct PlanoViewerView: View {
         }
     }
 
-    private func renderAnnotatedPDF(document: PDFDocument, drawings: [Int: PKDrawing]) -> Data? {
+    private func renderAnnotatedPDF(document: PDFDocument, drawing: PKDrawing) -> Data? {
         let renderer = UIGraphicsPDFRenderer(bounds: .zero)
         return renderer.pdfData { context in
             for i in 0..<document.pageCount {
@@ -143,56 +142,46 @@ struct PlanoViewerView: View {
                 page.draw(with: .mediaBox, to: cgContext)
                 cgContext.restoreGState()
 
-                // Superponer el dibujo de esta página
-                if let drawing = drawings[i] {
-                    let image = drawing.image(from: bounds, scale: UIScreen.main.scale)
-                    image.draw(in: bounds)
-                }
+                // Superponer el dibujo completo (el canvas cubre todas las páginas)
+                let image = drawing.image(from: bounds, scale: UIScreen.main.scale)
+                image.draw(in: bounds)
             }
         }
     }
 }
 
-// MARK: - Coordinator: un PKCanvasView por página
+// MARK: - Coordinator: un canvas sobre el documentView del PDFView
 
 class PDFCanvasCoordinator {
-    var canvases: [Int: PKCanvasView] = [:]
+    let canvasView = PKCanvasView()
     let toolPicker = PKToolPicker()
     private(set) var pdfView: PDFView?
 
-    /// Dibujos indexados por número de página.
-    var pageDrawings: [Int: PKDrawing] {
-        canvases.mapValues { $0.drawing }
-    }
+    /// El dibujo completo (cubre todas las páginas).
+    var drawing: PKDrawing { canvasView.drawing }
 
-    func setup(pdfView: PDFView, pageCount: Int) {
+    func setup(pdfView: PDFView) {
         self.pdfView = pdfView
 
-        // Crear un canvas por cada página
-        for i in 0..<pageCount {
-            guard let page = pdfView.document?.page(at: i) else { continue }
-            let pageBounds = page.bounds(for: .mediaBox)
+        // Buscar el documentView (contenido scrollable del PDFView)
+        guard let documentView = pdfView.subviews.first?.subviews.first else { return }
 
-            let canvas = PKCanvasView()
-            canvas.backgroundColor = .clear
-            canvas.isOpaque = false
-            canvas.drawingPolicy = .pencilOnly
-            canvas.isUserInteractionEnabled = false
+        canvasView.backgroundColor = .clear
+        canvasView.isOpaque = false
+        canvasView.drawingPolicy = .pencilOnly
+        canvasView.isUserInteractionEnabled = false
+        canvasView.frame = documentView.bounds
+        canvasView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        documentView.addSubview(canvasView)
+    }
 
-            // Obtener la vista de la página y superponer el canvas
-            if let pageView = pdfView.pageView(for: page) {
-                canvas.frame = CGRect(origin: .zero, size: pageView.bounds.size)
-                canvas.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-                pageView.addSubview(canvas)
-                canvases[i] = canvas
-            }
-        }
+    func resizeCanvas() {
+        guard let documentView = pdfView?.subviews.first?.subviews.first else { return }
+        canvasView.frame = documentView.bounds
     }
 
     func setDrawingMode(_ enabled: Bool) {
-        for canvas in canvases.values {
-            canvas.isUserInteractionEnabled = enabled
-        }
+        canvasView.isUserInteractionEnabled = enabled
         if enabled {
             showToolPicker()
         } else {
@@ -201,20 +190,15 @@ class PDFCanvasCoordinator {
     }
 
     func showToolPicker() {
-        guard let firstCanvas = canvases.values.first else { return }
-        for canvas in canvases.values {
-            toolPicker.addObserver(canvas)
-        }
-        toolPicker.setVisible(true, forFirstResponder: firstCanvas)
-        firstCanvas.becomeFirstResponder()
+        toolPicker.addObserver(canvasView)
+        toolPicker.setVisible(true, forFirstResponder: canvasView)
+        canvasView.becomeFirstResponder()
     }
 
     func hideToolPicker() {
-        for canvas in canvases.values {
-            toolPicker.setVisible(false, forFirstResponder: canvas)
-            toolPicker.removeObserver(canvas)
-            canvas.resignFirstResponder()
-        }
+        toolPicker.setVisible(false, forFirstResponder: canvasView)
+        toolPicker.removeObserver(canvasView)
+        canvasView.resignFirstResponder()
     }
 }
 
@@ -233,10 +217,18 @@ struct EmbeddedPDFCanvas: UIViewRepresentable {
         pdfView.displaysPageBreaks = true
         pdfView.backgroundColor = .systemBackground
 
-        // Esperar a que el layout esté listo para añadir los canvas
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            let pageCount = pdfView.document?.pageCount ?? 0
-            coordinator.setup(pdfView: pdfView, pageCount: pageCount)
+        // Esperar a que el layout esté listo para añadir el canvas
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            coordinator.setup(pdfView: pdfView)
+        }
+
+        // Observar cambios de tamaño para reajustar el canvas
+        NotificationCenter.default.addObserver(
+            forName: .PDFViewPageChanged,
+            object: pdfView,
+            queue: .main
+        ) { _ in
+            coordinator.resizeCanvas()
         }
 
         return pdfView
@@ -244,5 +236,6 @@ struct EmbeddedPDFCanvas: UIViewRepresentable {
 
     func updateUIView(_ pdfView: PDFView, context: Context) {
         coordinator.setDrawingMode(isDrawingMode)
+        coordinator.resizeCanvas()
     }
 }
