@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct HistorialView: View {
+    @Environment(AuthManager.self) private var auth
     @State private var entries: [HistorialEntry] = []
     @State private var filterTipo: String?
     @State private var isLoading = false
     @State private var selectedEntry: HistorialEntry?
+    @State private var showLogoutConfirm = false
     @Environment(\.dismiss) private var dismiss
 
     private let tipos = ["Todos", "obra", "operario", "asignacion", "plano"]
@@ -89,9 +91,23 @@ struct HistorialView: View {
             .navigationTitle("Historial")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(role: .destructive) {
+                        showLogoutConfirm = true
+                    } label: {
+                        Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") { dismiss() }
                 }
+            }
+            .confirmationDialog("¿Cerrar sesión?", isPresented: $showLogoutConfirm) {
+                Button("Cerrar sesión", role: .destructive) {
+                    dismiss()
+                    auth.logout()
+                }
+                Button("Cancelar", role: .cancel) {}
             }
             .sheet(item: $selectedEntry) { entry in
                 HistorialDetailSheet(entry: entry)
