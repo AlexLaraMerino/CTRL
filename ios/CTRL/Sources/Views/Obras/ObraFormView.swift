@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ObraFormView: View {
     var existingObra: Obra?
+    var prefillLatitud: Double?
+    var prefillLongitud: Double?
     let onSaved: () -> Void
 
     @State private var nombre = ""
@@ -38,10 +40,15 @@ struct ObraFormView: View {
                 }
 
                 Section("Coordenadas") {
-                    TextField("Latitud (ej: 40.4168)", text: $latitud)
-                        .keyboardType(.decimalPad)
-                    TextField("Longitud (ej: -3.7038)", text: $longitud)
-                        .keyboardType(.decimalPad)
+                    if prefillLatitud != nil {
+                        LabeledContent("Latitud", value: latitud)
+                        LabeledContent("Longitud", value: longitud)
+                    } else {
+                        TextField("Latitud (ej: 40.4168)", text: $latitud)
+                            .keyboardType(.decimalPad)
+                        TextField("Longitud (ej: -3.7038)", text: $longitud)
+                            .keyboardType(.decimalPad)
+                    }
                 }
 
                 Section("Estado") {
@@ -101,6 +108,13 @@ struct ObraFormView: View {
     }
 
     private func loadExisting() {
+        // Coordenadas desde long-press en el mapa
+        if let lat = prefillLatitud {
+            latitud = String(format: "%.5f", lat)
+        }
+        if let lng = prefillLongitud {
+            longitud = String(format: "%.5f", lng)
+        }
         guard let obra = existingObra else { return }
         nombre = obra.nombre
         direccion = obra.direccion ?? ""
