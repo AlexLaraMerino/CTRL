@@ -1,4 +1,5 @@
 .DS_Store
+.claude/settings.local.json
 
 # Node / Expo
 node_modules/
@@ -22,7 +23,23 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 ipad/CTRLiPad/CTRLiPad.xcodeproj/xcuserdata/
 
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# SQLite databases
+*.db
+
+# Alembic
+backend/alembic/versions/*.pyc
+
 # Local env
 .env
 .env.*
 !.env.example
+*.db
