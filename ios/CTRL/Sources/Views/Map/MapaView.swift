@@ -12,6 +12,9 @@ struct MapaView: View {
     @State private var pinnedAddress: String?
     @State private var showNewObraForm = false
 
+    // Route animators (keyed by asignacion id)
+    @State private var routeAnimators: [String: RouteAnimator] = [:]
+
     var body: some View {
         ZStack {
             MapReader { proxy in
@@ -51,10 +54,17 @@ struct MapaView: View {
                     ForEach(operariosRuta, id: \.asignacion.id) { item in
                         let coords = routeCoordinates(for: item.asignacion)
                         if coords.count >= 2 {
-                            AnimatedRouteMarker(
-                                operarioName: item.operario.nombre,
-                                routeCoordinates: coords
-                            )
+                            // Línea de ruta discontinua
+                            MapPolyline(coordinates: coords + [coords[0]])
+                                .stroke(.green.opacity(0.6), style: StrokeStyle(lineWidth: 2, dash: [8, 6]))
+
+                            // Marcador animado
+                            if let animator = routeAnimators[item.asignacion.id] {
+                                Annotation(item.operario.nombre, coordinate: animator.currentPosition) {
+                                    OperarioPin(nombre: item.operario.nombre, isRuta: true)
+                                }
+                                .annotationTitles(.hidden)
+                            }
                         } else if let first = coords.first {
                             Annotation(item.operario.nombre, coordinate: first) {
                                 OperarioPin(nombre: item.operario.nombre, isRuta: true)
@@ -87,6 +97,8 @@ struct MapaView: View {
                         pinnedCoordinate = coordinate
                     }
                 }
+                .onAppear { syncRouteAnimators() }
+                .onChange(of: dailyState.asignaciones) { syncRouteAnimators() }
             }
 
             // Tarjeta de coordenadas al hacer long-press
@@ -153,6 +165,26 @@ struct MapaView: View {
                 guard let op = dailyState.operarios.first(where: { $0.id == asig.operarioId }) else { return nil }
                 return OperarioAsignacionPair(operario: op, asignacion: asig)
             }
+    }
+
+    private func syncRouteAnimators() {
+        let currentIds = Set(operariosRuta.map(\.asignacion.id))
+
+        // Crear animadores nuevos
+        for item in operariosRuta {
+            let coords = routeCoordinates(for: item.asignacion)
+            if coords.count >= 2, routeAnimators[item.asignacion.id] == nil {
+                let animator = RouteAnimator(coordinates: coords)
+                routeAnimators[item.asignacion.id] = animator
+                animator.start()
+            }
+        }
+
+        // Eliminar animadores que ya no son necesarios
+        for id in routeAnimators.keys where !currentIds.contains(id) {
+            routeAnimators[id]?.stop()
+            routeAnimators.removeValue(forKey: id)
+        }
     }
 
     private func routeCoordinates(for asig: Asignacion) -> [CLLocationCoordinate2D] {
