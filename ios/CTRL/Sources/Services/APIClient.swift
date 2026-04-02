@@ -126,6 +126,10 @@ actor APIClient {
         return try await uploadMultipart("/obras/\(obraId)/planos", fileData: fileData, filename: filename)
     }
 
+    func deletePlano(planoId: String) async throws {
+        try await delete("/planos/\(planoId)")
+    }
+
     func uploadAnotacion(planoId: String, pdfData: Data) async throws -> Plano {
         return try await uploadMultipart("/planos/\(planoId)/anotacion", fileData: pdfData, filename: "anotacion.pdf")
     }

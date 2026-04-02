@@ -10,19 +10,15 @@ struct PlanoViewerView: View {
     @State private var isSaving = false
     @State private var saveSuccess = false
     @State private var saveError: String?
-    @State private var coordinator: PDFCanvasCoordinator?
+    @State private var pdfCanvasVC: PDFCanvasViewController?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Group {
-                if let data = pdfData, let coord = coordinator {
-                    EmbeddedPDFCanvas(
-                        pdfData: data,
-                        isDrawingMode: isDrawingMode,
-                        coordinator: coord
-                    )
-                    .ignoresSafeArea(edges: .bottom)
+                if pdfData != nil, let vc = pdfCanvasVC {
+                    PDFCanvasWrapper(viewController: vc)
+                        .ignoresSafeArea(edges: .bottom)
                 } else {
                     VStack {
                         Spacer()
@@ -36,7 +32,7 @@ struct PlanoViewerView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cerrar") {
-                        coordinator?.hideToolPicker()
+                        pdfCanvasVC?.setDrawingMode(false)
                         dismiss()
                     }
                 }
@@ -44,6 +40,7 @@ struct PlanoViewerView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isDrawingMode.toggle()
+                        pdfCanvasVC?.setDrawingMode(isDrawingMode)
                     } label: {
                         Image(systemName: isDrawingMode ? "pencil.circle.fill" : "pencil.circle")
                             .font(.title2)
@@ -85,13 +82,13 @@ struct PlanoViewerView: View {
             let (data, _) = try await URLSession.shared.data(for: request)
             await MainActor.run {
                 pdfData = data
-                coordinator = PDFCanvasCoordinator()
+                pdfCanvasVC = PDFCanvasViewController(pdfData: data)
             }
         } catch {}
     }
 
     private func saveAnnotation() async {
-        guard let coord = coordinator else { return }
+        guard let vc = pdfCanvasVC else { return }
         isSaving = true
         saveSuccess = false
 
@@ -101,7 +98,7 @@ struct PlanoViewerView: View {
             return
         }
 
-        let drawing = await MainActor.run { coord.drawing }
+        let drawing = await MainActor.run { vc.canvasView.drawing }
         guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawing: drawing) else {
             saveError = "Error al generar PDF anotado"
             isSaving = false
@@ -114,7 +111,6 @@ struct PlanoViewerView: View {
                 isSaving = false
                 saveSuccess = true
             }
-            // Quitar el check después de 2 segundos
             try? await Task.sleep(for: .seconds(2))
             await MainActor.run { saveSuccess = false }
         } catch {
@@ -135,14 +131,12 @@ struct PlanoViewerView: View {
                 context.beginPage(withBounds: bounds, pageInfo: [:])
                 let cgContext = context.cgContext
 
-                // Dibujar la página original
                 cgContext.saveGState()
                 cgContext.translateBy(x: 0, y: bounds.height)
                 cgContext.scaleBy(x: 1, y: -1)
                 page.draw(with: .mediaBox, to: cgContext)
                 cgContext.restoreGState()
 
-                // Superponer el dibujo completo (el canvas cubre todas las páginas)
                 let image = drawing.image(from: bounds, scale: UIScreen.main.scale)
                 image.draw(in: bounds)
             }
@@ -150,92 +144,78 @@ struct PlanoViewerView: View {
     }
 }
 
-// MARK: - Coordinator: un canvas sobre el documentView del PDFView
+// MARK: - UIKit ViewController para PDF + PencilKit sin interferencia de SwiftUI
 
-class PDFCanvasCoordinator {
+class PDFCanvasViewController: UIViewController {
+    let pdfView = PDFView()
     let canvasView = PKCanvasView()
-    let toolPicker = PKToolPicker()
-    private(set) var pdfView: PDFView?
+    private let toolPicker = PKToolPicker()
+    private let pdfData: Data
 
-    /// El dibujo completo (cubre todas las páginas).
-    var drawing: PKDrawing { canvasView.drawing }
-
-    func setup(pdfView: PDFView) {
-        self.pdfView = pdfView
-
-        // Buscar el documentView (contenido scrollable del PDFView)
-        guard let documentView = pdfView.subviews.first?.subviews.first else { return }
-
-        canvasView.backgroundColor = .clear
-        canvasView.isOpaque = false
-        canvasView.drawingPolicy = .pencilOnly
-        canvasView.isUserInteractionEnabled = false
-        canvasView.frame = documentView.bounds
-        canvasView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        documentView.addSubview(canvasView)
+    init(pdfData: Data) {
+        self.pdfData = pdfData
+        super.init(nibName: nil, bundle: nil)
     }
 
-    func resizeCanvas() {
-        guard let documentView = pdfView?.subviews.first?.subviews.first else { return }
-        canvasView.frame = documentView.bounds
-    }
+    required init?(coder: NSCoder) { fatalError() }
 
-    func setDrawingMode(_ enabled: Bool) {
-        canvasView.isUserInteractionEnabled = enabled
-        if enabled {
-            showToolPicker()
-        } else {
-            hideToolPicker()
-        }
-    }
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-    func showToolPicker() {
-        toolPicker.addObserver(canvasView)
-        toolPicker.setVisible(true, forFirstResponder: canvasView)
-        canvasView.becomeFirstResponder()
-    }
-
-    func hideToolPicker() {
-        toolPicker.setVisible(false, forFirstResponder: canvasView)
-        toolPicker.removeObserver(canvasView)
-        canvasView.resignFirstResponder()
-    }
-}
-
-// MARK: - UIKit bridge
-
-struct EmbeddedPDFCanvas: UIViewRepresentable {
-    let pdfData: Data
-    let isDrawingMode: Bool
-    let coordinator: PDFCanvasCoordinator
-
-    func makeUIView(context: Context) -> PDFView {
-        let pdfView = PDFView()
+        // PDF
         pdfView.document = PDFDocument(data: pdfData)
         pdfView.autoScales = true
         pdfView.displayMode = .singlePageContinuous
         pdfView.displaysPageBreaks = true
         pdfView.backgroundColor = .systemBackground
+        pdfView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pdfView)
 
-        // Esperar a que el layout esté listo para añadir el canvas
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            coordinator.setup(pdfView: pdfView)
-        }
+        // Canvas superpuesto
+        canvasView.backgroundColor = .clear
+        canvasView.isOpaque = false
+        canvasView.drawingPolicy = .anyInput
+        canvasView.isUserInteractionEnabled = false
+        canvasView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(canvasView)
 
-        // Observar cambios de tamaño para reajustar el canvas
-        NotificationCenter.default.addObserver(
-            forName: .PDFViewPageChanged,
-            object: pdfView,
-            queue: .main
-        ) { _ in
-            coordinator.resizeCanvas()
-        }
+        NSLayoutConstraint.activate([
+            pdfView.topAnchor.constraint(equalTo: view.topAnchor),
+            pdfView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            pdfView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pdfView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
-        return pdfView
+            canvasView.topAnchor.constraint(equalTo: view.topAnchor),
+            canvasView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            canvasView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            canvasView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+        ])
     }
 
-    func updateUIView(_ pdfView: PDFView, context: Context) {
-        coordinator.setDrawingMode(isDrawingMode)
-        coordinator.resizeCanvas()
+    func setDrawingMode(_ enabled: Bool) {
+        canvasView.isUserInteractionEnabled = enabled
+        if enabled {
+            toolPicker.addObserver(canvasView)
+            toolPicker.setVisible(true, forFirstResponder: canvasView)
+            canvasView.becomeFirstResponder()
+        } else {
+            toolPicker.setVisible(false, forFirstResponder: canvasView)
+            toolPicker.removeObserver(canvasView)
+            canvasView.resignFirstResponder()
+        }
+    }
+}
+
+// MARK: - UIViewControllerRepresentable wrapper
+
+struct PDFCanvasWrapper: UIViewControllerRepresentable {
+    let viewController: PDFCanvasViewController
+
+    func makeUIViewController(context: Context) -> PDFCanvasViewController {
+        viewController
+    }
+
+    func updateUIViewController(_ vc: PDFCanvasViewController, context: Context) {
+        // No hacer nada aquí — toda la lógica se maneja desde los botones
     }
 }
