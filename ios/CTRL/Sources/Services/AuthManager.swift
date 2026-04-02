@@ -12,7 +12,7 @@ final class AuthManager {
         isLoading = true
         errorMessage = nil
         do {
-            let response = try await APIClient.shared.login(username: username, password: password)
+            _ = try await APIClient.shared.login(username: username, password: password)
             await MainActor.run {
                 self.currentUser = username
                 self.isAuthenticated = true
