@@ -59,27 +59,17 @@ struct MainView: View {
 
             // Panel izquierdo — Calendario
             if showLeftPanel {
-                HStack(spacing: 0) {
+                DraggablePanel(edge: .leading, width: 320, isPresented: $showLeftPanel) {
                     CalendarPanel(
                         dailyState: dailyState,
                         onClose: { showLeftPanel = false }
                     )
-                    .frame(width: 320)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 8)
-                    .padding(.leading, 8)
-                    .padding(.top, 56)
-
-                    Spacer()
                 }
             }
 
             // Panel derecho — Obras / Operarios
             if showRightPanel {
-                HStack(spacing: 0) {
-                    Spacer()
-
+                DraggablePanel(edge: .trailing, width: 340, isPresented: $showRightPanel) {
                     RightPanel(
                         tab: $rightPanelTab,
                         dailyState: dailyState,
@@ -87,12 +77,6 @@ struct MainView: View {
                         onObraSelected: { obra in selectedObra = obra },
                         onOperarioSelected: { op in selectedOperario = op }
                     )
-                    .frame(width: 340)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 8)
-                    .padding(.trailing, 8)
-                    .padding(.top, 56)
                 }
             }
         }
