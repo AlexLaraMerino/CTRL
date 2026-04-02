@@ -12,9 +12,11 @@ from app.routers import auth, obras, operarios, asignaciones, historial, planos
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Crea las tablas en el arranque (fase inicial sin Alembic en producción)."""
+    """Crea las tablas y la carpeta de datos en el arranque."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # Crear carpeta de datos si no existe
+    settings.ctrl_data_root.mkdir(parents=True, exist_ok=True)
     yield
 
 
