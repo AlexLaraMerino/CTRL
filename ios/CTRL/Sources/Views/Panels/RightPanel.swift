@@ -52,15 +52,37 @@ struct ObrasListPanel: View {
     let dailyState: DailyStateManager
     let onSelected: (Obra) -> Void
 
+    @State private var showNewObra = false
+
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(obras) { obra in
-                    ObraCard(obra: obra, operarioCount: dailyState.operarioCount(for: obra.id))
-                        .onTapGesture { onSelected(obra) }
+        VStack(spacing: 0) {
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(obras) { obra in
+                        ObraCard(obra: obra, operarioCount: dailyState.operarioCount(for: obra.id))
+                            .onTapGesture { onSelected(obra) }
+                    }
                 }
+                .padding()
             }
-            .padding()
+
+            Divider()
+
+            Button {
+                showNewObra = true
+            } label: {
+                Label("Nueva obra", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.bordered)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+        .sheet(isPresented: $showNewObra) {
+            ObraFormView {
+                Task { await dailyState.loadDay() }
+            }
         }
     }
 }
@@ -134,16 +156,38 @@ struct OperariosListPanel: View {
     let dailyState: DailyStateManager
     let onSelected: (Operario) -> Void
 
+    @State private var showNewOperario = false
+
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(operarios) { operario in
-                    OperarioRow(operario: operario, asignacion: asignacionForOperario(operario.id))
-                        .onTapGesture { onSelected(operario) }
-                        .draggable(operario.id) // Permite arrastrar al mapa
+        VStack(spacing: 0) {
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(operarios) { operario in
+                        OperarioRow(operario: operario, asignacion: asignacionForOperario(operario.id))
+                            .onTapGesture { onSelected(operario) }
+                            .draggable(operario.id)
+                    }
                 }
+                .padding()
             }
-            .padding()
+
+            Divider()
+
+            Button {
+                showNewOperario = true
+            } label: {
+                Label("Nuevo operario", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.bordered)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+        }
+        .sheet(isPresented: $showNewOperario) {
+            OperarioFormView {
+                Task { await dailyState.loadDay() }
+            }
         }
     }
 
