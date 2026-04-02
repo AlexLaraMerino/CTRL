@@ -7,6 +7,7 @@ struct OperarioDetailView: View {
     @State private var asignaciones: [Asignacion] = []
     @State private var historial: [HistorialEntry] = []
     @State private var weekOffset = 0
+    @State private var showEditForm = false
     @Environment(\.dismiss) private var dismiss
 
     private var weekStart: Date {
@@ -140,8 +141,16 @@ struct OperarioDetailView: View {
             .navigationTitle(operario.nombre)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Editar") { showEditForm = true }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showEditForm) {
+                OperarioFormView(existingOperario: operario) {
+                    Task { await dailyState.loadDay() }
                 }
             }
             .task { await loadAll() }

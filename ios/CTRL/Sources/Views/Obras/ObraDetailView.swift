@@ -8,6 +8,7 @@ struct ObraDetailView: View {
     @State private var historial: [HistorialEntry] = []
     @State private var operariosHoy: [Operario] = []
     @State private var selectedPlano: Plano?
+    @State private var showEditForm = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -125,8 +126,16 @@ struct ObraDetailView: View {
             .navigationTitle(obra.nombre)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Editar") { showEditForm = true }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showEditForm) {
+                ObraFormView(existingObra: obra) {
+                    Task { await dailyState.loadDay() }
                 }
             }
             .sheet(item: $selectedPlano) { plano in
