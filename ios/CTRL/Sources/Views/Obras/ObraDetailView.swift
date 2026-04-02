@@ -175,7 +175,7 @@ struct ObraDetailView: View {
                     Task { await dailyState.loadDay() }
                 }
             }
-            .sheet(item: $selectedPlano) { plano in
+            .fullScreenCover(item: $selectedPlano) { plano in
                 PlanoViewerView(plano: plano)
             }
             .fileImporter(
