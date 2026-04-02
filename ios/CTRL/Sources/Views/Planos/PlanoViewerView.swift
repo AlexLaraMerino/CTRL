@@ -10,14 +10,14 @@ struct PlanoViewerView: View {
     @State private var isSaving = false
     @State private var saveSuccess = false
     @State private var saveError: String?
-    @State private var pdfCanvasVC: PDFCanvasViewController?
+    @State private var pdfCanvasVC: SinglePagePDFController?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Group {
                 if pdfData != nil, let vc = pdfCanvasVC {
-                    PDFCanvasWrapper(viewController: vc)
+                    SinglePagePDFWrapper(viewController: vc)
                         .ignoresSafeArea(edges: .bottom)
                 } else {
                     VStack {
@@ -82,24 +82,24 @@ struct PlanoViewerView: View {
             let (data, _) = try await URLSession.shared.data(for: request)
             await MainActor.run {
                 pdfData = data
-                pdfCanvasVC = PDFCanvasViewController(pdfData: data)
+                pdfCanvasVC = SinglePagePDFController(pdfData: data)
             }
         } catch {}
     }
 
     private func saveAnnotation() async {
-        guard let vc = pdfCanvasVC else { return }
-        isSaving = true
-        saveSuccess = false
-
-        guard let originalData = pdfData,
+        guard let vc = pdfCanvasVC, let originalData = pdfData,
               let pdfDoc = PDFDocument(data: originalData) else {
             isSaving = false
             return
         }
 
-        let drawing = await MainActor.run { vc.canvasView.drawing }
-        guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawing: drawing, canvasSize: await MainActor.run { vc.canvasView.bounds.size }) else {
+        isSaving = true
+        saveSuccess = false
+
+        let drawings = await MainActor.run { vc.allDrawings() }
+
+        guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawings: drawings) else {
             saveError = "Error al generar PDF anotado"
             isSaving = false
             return
@@ -121,58 +121,49 @@ struct PlanoViewerView: View {
         }
     }
 
-    private func renderAnnotatedPDF(document: PDFDocument, drawing: PKDrawing, canvasSize: CGSize) -> Data? {
-        // Calcular la altura total de todas las páginas para mapear las coordenadas del canvas
-        var totalHeight: CGFloat = 0
-        var pageRects: [(rect: CGRect, pdfBounds: CGRect)] = []
-
-        for i in 0..<document.pageCount {
-            guard let page = document.page(at: i) else { continue }
-            let pdfBounds = page.bounds(for: .mediaBox)
-            let scale = canvasSize.width / pdfBounds.width
-            let displayHeight = pdfBounds.height * scale
-            let pageRect = CGRect(x: 0, y: totalHeight, width: canvasSize.width, height: displayHeight)
-            pageRects.append((rect: pageRect, pdfBounds: pdfBounds))
-            totalHeight += displayHeight
-        }
-
+    private func renderAnnotatedPDF(document: PDFDocument, drawings: [Int: PKDrawing]) -> Data? {
         let renderer = UIGraphicsPDFRenderer(bounds: .zero)
         return renderer.pdfData { context in
             for i in 0..<document.pageCount {
                 guard let page = document.page(at: i) else { continue }
-                let pdfBounds = page.bounds(for: .mediaBox)
+                let bounds = page.bounds(for: .mediaBox)
 
-                context.beginPage(withBounds: pdfBounds, pageInfo: [:])
+                context.beginPage(withBounds: bounds, pageInfo: [:])
                 let cgContext = context.cgContext
 
                 cgContext.saveGState()
-                cgContext.translateBy(x: 0, y: pdfBounds.height)
+                cgContext.translateBy(x: 0, y: bounds.height)
                 cgContext.scaleBy(x: 1, y: -1)
                 page.draw(with: .mediaBox, to: cgContext)
                 cgContext.restoreGState()
 
-                // Extraer solo la porción del dibujo que corresponde a esta página
-                if i < pageRects.count {
-                    let pr = pageRects[i]
-                    let image = drawing.image(from: pr.rect, scale: UIScreen.main.scale)
-                    image.draw(in: pdfBounds)
+                if let drawing = drawings[i] {
+                    let image = drawing.image(from: bounds, scale: UIScreen.main.scale)
+                    image.draw(in: bounds)
                 }
             }
         }
     }
 }
 
-// MARK: - UIKit ViewController
+// MARK: - Single page PDF + PencilKit controller
 
-class PDFCanvasViewController: UIViewController {
-    let pdfView = PDFView()
+class SinglePagePDFController: UIViewController {
+    private let pdfDocument: PDFDocument
+    private let pdfView = PDFView()
     let canvasView = PKCanvasView()
     private let toolPicker = PKToolPicker()
-    private let pdfData: Data
-    private var hasSetup = false
+    private let pageLabel = UILabel()
+    private let prevButton = UIButton(type: .system)
+    private let nextButton = UIButton(type: .system)
+
+    private var currentPage = 0
+    private var pageDrawings: [Int: PKDrawing] = [:]
+
+    var pageCount: Int { pdfDocument.pageCount }
 
     init(pdfData: Data) {
-        self.pdfData = pdfData
+        self.pdfDocument = PDFDocument(data: pdfData) ?? PDFDocument()
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -180,75 +171,120 @@ class PDFCanvasViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .systemBackground
 
-        // PDF
-        pdfView.document = PDFDocument(data: pdfData)
+        setupPDFView()
+        setupCanvas()
+        setupPageControls()
+        showPage(0)
+    }
+
+    private func setupPDFView() {
         pdfView.autoScales = true
-        pdfView.displayMode = .singlePageContinuous
-        pdfView.displaysPageBreaks = true
+        pdfView.displayMode = .singlePage
+        pdfView.displaysPageBreaks = false
         pdfView.backgroundColor = .systemBackground
+        pdfView.isUserInteractionEnabled = true
         pdfView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(pdfView)
 
         NSLayoutConstraint.activate([
             pdfView.topAnchor.constraint(equalTo: view.topAnchor),
-            pdfView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             pdfView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             pdfView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pdfView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -50),
         ])
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        if !hasSetup {
-            hasSetup = true
-            embedCanvas()
-        }
-    }
-
-    /// Inyecta el PKCanvasView dentro del scrollView interno del PDFView
-    /// para que el dibujo se desplace junto con las páginas.
-    private func embedCanvas() {
-        // PDFView contiene un UIScrollView internamente
-        guard let scrollView = findScrollView(in: pdfView) else { return }
-        guard let contentView = scrollView.subviews.first else { return }
-
+    private func setupCanvas() {
         canvasView.backgroundColor = .clear
         canvasView.isOpaque = false
         canvasView.drawingPolicy = .anyInput
         canvasView.isUserInteractionEnabled = false
-        canvasView.frame = contentView.bounds
-        canvasView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        contentView.addSubview(canvasView)
+        canvasView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(canvasView)
 
-        // Observar cambios de tamaño del contenido
-        scrollView.addObserver(self, forKeyPath: "contentSize", options: .new, context: nil)
+        NSLayoutConstraint.activate([
+            canvasView.topAnchor.constraint(equalTo: pdfView.topAnchor),
+            canvasView.leadingAnchor.constraint(equalTo: pdfView.leadingAnchor),
+            canvasView.trailingAnchor.constraint(equalTo: pdfView.trailingAnchor),
+            canvasView.bottomAnchor.constraint(equalTo: pdfView.bottomAnchor),
+        ])
     }
 
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
-        if keyPath == "contentSize" {
-            guard let scrollView = findScrollView(in: pdfView),
-                  let contentView = scrollView.subviews.first else { return }
-            canvasView.frame = contentView.bounds
-        }
+    private func setupPageControls() {
+        let bar = UIView()
+        bar.backgroundColor = .secondarySystemBackground
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bar)
+
+        prevButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        prevButton.addTarget(self, action: #selector(prevPage), for: .touchUpInside)
+        prevButton.translatesAutoresizingMaskIntoConstraints = false
+
+        nextButton.setImage(UIImage(systemName: "chevron.right"), for: .normal)
+        nextButton.addTarget(self, action: #selector(nextPage), for: .touchUpInside)
+        nextButton.translatesAutoresizingMaskIntoConstraints = false
+
+        pageLabel.textAlignment = .center
+        pageLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        pageLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        bar.addSubview(prevButton)
+        bar.addSubview(pageLabel)
+        bar.addSubview(nextButton)
+
+        NSLayoutConstraint.activate([
+            bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            bar.heightAnchor.constraint(equalToConstant: 50),
+
+            prevButton.leadingAnchor.constraint(equalTo: bar.leadingAnchor, constant: 20),
+            prevButton.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            prevButton.widthAnchor.constraint(equalToConstant: 44),
+            prevButton.heightAnchor.constraint(equalToConstant: 44),
+
+            nextButton.trailingAnchor.constraint(equalTo: bar.trailingAnchor, constant: -20),
+            nextButton.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+            nextButton.widthAnchor.constraint(equalToConstant: 44),
+            nextButton.heightAnchor.constraint(equalToConstant: 44),
+
+            pageLabel.centerXAnchor.constraint(equalTo: bar.centerXAnchor),
+            pageLabel.centerYAnchor.constraint(equalTo: bar.centerYAnchor),
+        ])
     }
 
-    private func findScrollView(in view: UIView) -> UIScrollView? {
-        if let sv = view as? UIScrollView { return sv }
-        for sub in view.subviews {
-            if let found = findScrollView(in: sub) { return found }
+    private func showPage(_ index: Int) {
+        // Guardar dibujo actual
+        pageDrawings[currentPage] = canvasView.drawing
+
+        currentPage = index
+
+        // Mostrar la página
+        if let page = pdfDocument.page(at: index) {
+            pdfView.go(to: page)
         }
-        return nil
+
+        // Restaurar dibujo de la nueva página
+        canvasView.drawing = pageDrawings[index] ?? PKDrawing()
+
+        // Actualizar controles
+        pageLabel.text = "Página \(index + 1) de \(pageCount)"
+        prevButton.isEnabled = index > 0
+        nextButton.isEnabled = index < pageCount - 1
+    }
+
+    @objc private func prevPage() {
+        if currentPage > 0 { showPage(currentPage - 1) }
+    }
+
+    @objc private func nextPage() {
+        if currentPage < pageCount - 1 { showPage(currentPage + 1) }
     }
 
     func setDrawingMode(_ enabled: Bool) {
         canvasView.isUserInteractionEnabled = enabled
-
-        // Deshabilitar el scroll del PDF cuando se dibuja
-        if let scrollView = findScrollView(in: pdfView) {
-            scrollView.isScrollEnabled = !enabled
-        }
-
         if enabled {
             toolPicker.addObserver(canvasView)
             toolPicker.setVisible(true, forFirstResponder: canvasView)
@@ -260,21 +296,22 @@ class PDFCanvasViewController: UIViewController {
         }
     }
 
-    deinit {
-        if let scrollView = findScrollView(in: pdfView) {
-            scrollView.removeObserver(self, forKeyPath: "contentSize")
-        }
+    /// Devuelve todos los dibujos indexados por número de página.
+    func allDrawings() -> [Int: PKDrawing] {
+        // Guardar el de la página actual
+        pageDrawings[currentPage] = canvasView.drawing
+        return pageDrawings
     }
 }
 
 // MARK: - Wrapper
 
-struct PDFCanvasWrapper: UIViewControllerRepresentable {
-    let viewController: PDFCanvasViewController
+struct SinglePagePDFWrapper: UIViewControllerRepresentable {
+    let viewController: SinglePagePDFController
 
-    func makeUIViewController(context: Context) -> PDFCanvasViewController {
+    func makeUIViewController(context: Context) -> SinglePagePDFController {
         viewController
     }
 
-    func updateUIViewController(_ vc: PDFCanvasViewController, context: Context) {}
+    func updateUIViewController(_ vc: SinglePagePDFController, context: Context) {}
 }
