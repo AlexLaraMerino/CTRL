@@ -69,16 +69,30 @@ struct OperarioDetailView: View {
                 // Calendario semanal
                 Section {
                     HStack {
-                        Button { weekOffset -= 1; Task { await loadAsignaciones() } } label: {
+                        Button {
+                            weekOffset -= 1
+                            Task { await loadAsignaciones() }
+                        } label: {
                             Image(systemName: "chevron.left")
+                                .padding(8)
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.borderless)
+
                         Spacer()
                         Text("Semana del \(Self.shortFormatter.string(from: weekStart))")
                             .font(.subheadline.bold())
                         Spacer()
-                        Button { weekOffset += 1; Task { await loadAsignaciones() } } label: {
+
+                        Button {
+                            weekOffset += 1
+                            Task { await loadAsignaciones() }
+                        } label: {
                             Image(systemName: "chevron.right")
+                                .padding(8)
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.borderless)
                     }
 
                     ForEach(weekDays, id: \.self) { day in

@@ -6,6 +6,7 @@ struct CalendarPanel: View {
 
     @State private var showConfirmCopy = false
     @State private var showConfirmExtend = false
+    @State private var refreshCounter = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -47,7 +48,12 @@ struct CalendarPanel: View {
                 }
                 .buttonStyle(.bordered)
                 .confirmationDialog("¿Copiar asignaciones de ayer?", isPresented: $showConfirmCopy) {
-                    Button("Copiar") { Task { await dailyState.copyYesterday() } }
+                    Button("Copiar") {
+                        Task {
+                            await dailyState.copyYesterday()
+                            refreshCounter += 1
+                        }
+                    }
                     Button("Cancelar", role: .cancel) {}
                 }
 
@@ -59,7 +65,12 @@ struct CalendarPanel: View {
                 }
                 .buttonStyle(.bordered)
                 .confirmationDialog("¿Extender a los días laborables restantes?", isPresented: $showConfirmExtend) {
-                    Button("Extender") { Task { await dailyState.extendWeek() } }
+                    Button("Extender") {
+                        Task {
+                            await dailyState.extendWeek()
+                            refreshCounter += 1
+                        }
+                    }
                     Button("Cancelar", role: .cancel) {}
                 }
             }
@@ -73,7 +84,7 @@ struct CalendarPanel: View {
                     .font(.subheadline.bold())
                     .padding(.horizontal)
 
-                RecentChangesView(fecha: dailyState.dateString)
+                RecentChangesView(fecha: dailyState.dateString, refreshTrigger: refreshCounter)
             }
 
             Spacer()
@@ -83,6 +94,8 @@ struct CalendarPanel: View {
 
 struct RecentChangesView: View {
     let fecha: String
+    let refreshTrigger: Int
+
     @State private var entries: [HistorialEntry] = []
 
     var body: some View {
@@ -106,7 +119,7 @@ struct RecentChangesView: View {
                 }
             }
         }
-        .task {
+        .task(id: refreshTrigger) {
             do {
                 entries = try await APIClient.shared.listHistorial(fecha: fecha, limit: 5)
             } catch {}
