@@ -8,6 +8,8 @@ actor APIClient {
     private var baseURL = "http://localhost:8000"
     private var token: String?
 
+    func getToken() -> String? { token }
+
     func configure(baseURL: String) {
         self.baseURL = baseURL
     }

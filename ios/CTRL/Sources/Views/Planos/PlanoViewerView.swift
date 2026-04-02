@@ -2,56 +2,66 @@ import SwiftUI
 import PDFKit
 import PencilKit
 
-/// Visor de plano PDF con anotaciones PencilKit.
+/// Visor de plano PDF con anotaciones PencilKit. Se presenta a pantalla completa.
 struct PlanoViewerView: View {
     let plano: Plano
 
     @State private var pdfData: Data?
-    @State private var canvasView = PKCanvasView()
-    @State private var isToolPickerVisible = false
+    @State private var isDrawingMode = false
     @State private var isSaving = false
     @State private var saveError: String?
+    @State private var coordinator = PDFCanvasCoordinator()
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            Group {
                 if let data = pdfData {
-                    PDFAnnotationView(
+                    PDFCanvasRepresentable(
                         pdfData: data,
-                        canvasView: $canvasView,
-                        isToolPickerVisible: $isToolPickerVisible
+                        isDrawingMode: isDrawingMode,
+                        coordinator: coordinator
                     )
+                    .ignoresSafeArea(edges: .bottom)
                 } else {
-                    ProgressView("Cargando plano...")
+                    VStack {
+                        Spacer()
+                        ProgressView("Cargando plano...")
+                        Spacer()
+                    }
                 }
             }
             .navigationTitle(plano.nombre)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cerrar") { dismiss() }
+                    Button("Cerrar") {
+                        coordinator.hideToolPicker()
+                        dismiss()
+                    }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack {
-                        Button {
-                            isToolPickerVisible.toggle()
-                        } label: {
-                            Image(systemName: isToolPickerVisible ? "pencil.circle.fill" : "pencil.circle")
-                        }
-
-                        Button {
-                            Task { await saveAnnotation() }
-                        } label: {
-                            if isSaving {
-                                ProgressView()
-                            } else {
-                                Label("Guardar copia anotada", systemImage: "square.and.arrow.down")
-                            }
-                        }
-                        .disabled(isSaving)
+                    Button {
+                        isDrawingMode.toggle()
+                    } label: {
+                        Image(systemName: isDrawingMode ? "pencil.circle.fill" : "pencil.circle")
+                            .font(.title2)
                     }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await saveAnnotation() }
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.title2)
+                        }
+                    }
+                    .disabled(isSaving || pdfData == nil)
                 }
             }
             .alert("Error al guardar", isPresented: .constant(saveError != nil)) {
@@ -64,11 +74,9 @@ struct PlanoViewerView: View {
     }
 
     private func loadPDF() async {
-        // Descargar el PDF del servidor
         guard let url = await APIClient.shared.downloadPlanoURL(planoId: plano.id) else { return }
         do {
-            // Necesitamos añadir el token de auth
-            let token = await getToken()
+            let token = await APIClient.shared.getToken()
             var request = URLRequest(url: url)
             if let token {
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -78,34 +86,33 @@ struct PlanoViewerView: View {
         } catch {}
     }
 
-    private func getToken() async -> String? {
-        // El token se gestiona en APIClient pero necesitamos accederlo para URLRequest directa
-        // En una implementación completa esto se refactorizaría
-        return nil // El token ya está en el APIClient
-    }
-
     private func saveAnnotation() async {
         isSaving = true
-        defer { Task { @MainActor in isSaving = false } }
 
         guard let originalData = pdfData,
-              let pdfDoc = PDFDocument(data: originalData) else { return }
+              let pdfDoc = PDFDocument(data: originalData) else {
+            isSaving = false
+            return
+        }
 
-        // Renderizar PDF con anotaciones PencilKit superpuestas
-        let drawing = canvasView.drawing
+        let drawing = coordinator.canvasView.drawing
         guard let annotatedPDF = renderAnnotatedPDF(document: pdfDoc, drawing: drawing) else {
-            await MainActor.run { saveError = "Error al generar PDF anotado" }
+            saveError = "Error al generar PDF anotado"
+            isSaving = false
             return
         }
 
         do {
             _ = try await APIClient.shared.uploadAnotacion(planoId: plano.id, pdfData: annotatedPDF)
+            await MainActor.run { isSaving = false }
         } catch {
-            await MainActor.run { saveError = error.localizedDescription }
+            await MainActor.run {
+                saveError = error.localizedDescription
+                isSaving = false
+            }
         }
     }
 
-    /// Fusiona el PDF original con el dibujo PencilKit generando un nuevo PDF.
     private func renderAnnotatedPDF(document: PDFDocument, drawing: PKDrawing) -> Data? {
         let renderer = UIGraphicsPDFRenderer(bounds: .zero)
         return renderer.pdfData { context in
@@ -116,14 +123,12 @@ struct PlanoViewerView: View {
                 context.beginPage(withBounds: bounds, pageInfo: [:])
                 let cgContext = context.cgContext
 
-                // Dibujar la página original
                 cgContext.saveGState()
                 cgContext.translateBy(x: 0, y: bounds.height)
                 cgContext.scaleBy(x: 1, y: -1)
                 page.draw(with: .mediaBox, to: cgContext)
                 cgContext.restoreGState()
 
-                // Superponer el dibujo PencilKit
                 let image = drawing.image(from: bounds, scale: UIScreen.main.scale)
                 image.draw(in: bounds)
             }
@@ -131,29 +136,54 @@ struct PlanoViewerView: View {
     }
 }
 
-// MARK: - UIKit bridge para PDFView + PKCanvasView
+// MARK: - Coordinator que retiene el PKToolPicker
 
-struct PDFAnnotationView: UIViewRepresentable {
+class PDFCanvasCoordinator {
+    let canvasView = PKCanvasView()
+    let toolPicker = PKToolPicker()
+
+    func showToolPicker() {
+        toolPicker.setVisible(true, forFirstResponder: canvasView)
+        toolPicker.addObserver(canvasView)
+        canvasView.becomeFirstResponder()
+    }
+
+    func hideToolPicker() {
+        toolPicker.setVisible(false, forFirstResponder: canvasView)
+        toolPicker.removeObserver(canvasView)
+        canvasView.resignFirstResponder()
+    }
+}
+
+// MARK: - UIKit bridge
+
+struct PDFCanvasRepresentable: UIViewRepresentable {
     let pdfData: Data
-    @Binding var canvasView: PKCanvasView
-    @Binding var isToolPickerVisible: Bool
+    let isDrawingMode: Bool
+    let coordinator: PDFCanvasCoordinator
 
     func makeUIView(context: Context) -> UIView {
         let container = UIView()
+        container.backgroundColor = .systemBackground
 
         // PDFView
         let pdfView = PDFView()
         pdfView.document = PDFDocument(data: pdfData)
         pdfView.autoScales = true
+        pdfView.displayMode = .singlePageContinuous
+        pdfView.displaysPageBreaks = true
+        pdfView.tag = 100
         pdfView.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(pdfView)
 
         // PencilKit canvas superpuesto
-        canvasView.backgroundColor = .clear
-        canvasView.isOpaque = false
-        canvasView.drawingPolicy = .pencilOnly
-        canvasView.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(canvasView)
+        let canvas = coordinator.canvasView
+        canvas.backgroundColor = .clear
+        canvas.isOpaque = false
+        canvas.drawingPolicy = .pencilOnly
+        canvas.isUserInteractionEnabled = false
+        canvas.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(canvas)
 
         NSLayoutConstraint.activate([
             pdfView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
@@ -161,22 +191,23 @@ struct PDFAnnotationView: UIViewRepresentable {
             pdfView.topAnchor.constraint(equalTo: container.topAnchor),
             pdfView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
 
-            canvasView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            canvasView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            canvasView.topAnchor.constraint(equalTo: container.topAnchor),
-            canvasView.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            canvas.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            canvas.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            canvas.topAnchor.constraint(equalTo: container.topAnchor),
+            canvas.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
 
         return container
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        canvasView.isUserInteractionEnabled = isToolPickerVisible
+        let canvas = coordinator.canvasView
+        canvas.isUserInteractionEnabled = isDrawingMode
 
-        if isToolPickerVisible {
-            let toolPicker = PKToolPicker()
-            toolPicker.setVisible(true, forFirstResponder: canvasView)
-            canvasView.becomeFirstResponder()
+        if isDrawingMode {
+            coordinator.showToolPicker()
+        } else {
+            coordinator.hideToolPicker()
         }
     }
 }
