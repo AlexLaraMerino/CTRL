@@ -68,6 +68,17 @@ struct ObraDetailView: View {
                                         .foregroundStyle(.blue)
                                 }
                                 Text(op.nombre)
+
+                                Spacer()
+
+                                Button {
+                                    Task { await removeOperario(op) }
+                                } label: {
+                                    Image(systemName: "minus.circle.fill")
+                                        .foregroundStyle(.red)
+                                        .font(.title3)
+                                }
+                                .buttonStyle(.borderless)
                             }
                         }
                     }
@@ -154,6 +165,21 @@ struct ObraDetailView: View {
             await MainActor.run {
                 planos = p
                 historial = h
+                operariosHoy = dailyState.operariosInObra(obra.id)
+            }
+        } catch {}
+    }
+
+    private func removeOperario(_ operario: Operario) async {
+        // Buscar la asignación activa de este operario en esta obra hoy
+        guard let asignacion = dailyState.asignaciones.first(where: {
+            $0.operarioId == operario.id && $0.obraId == obra.id && $0.activo
+        }) else { return }
+
+        do {
+            try await APIClient.shared.deleteAsignacion(id: asignacion.id)
+            await dailyState.loadDay()
+            await MainActor.run {
                 operariosHoy = dailyState.operariosInObra(obra.id)
             }
         } catch {}
