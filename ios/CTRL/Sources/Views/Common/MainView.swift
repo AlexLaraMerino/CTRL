@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct MainView: View {
     @Environment(AuthManager.self) private var auth
@@ -7,8 +8,15 @@ struct MainView: View {
     @State private var showRightPanel = false
     @State private var rightPanelTab: RightPanelTab = .obras
     @State private var showHistorial = false
+    @State private var showSearch = false
     @State private var selectedObra: Obra?
     @State private var selectedOperario: Operario?
+    @State private var mapPosition: MapCameraPosition = .region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 40.0, longitude: -3.7),
+            span: MKCoordinateSpan(latitudeDelta: 8, longitudeDelta: 8)
+        )
+    )
 
     enum RightPanelTab {
         case obras, operarios
@@ -22,7 +30,8 @@ struct MainView: View {
                 onObraSelected: { obra in selectedObra = obra },
                 onOperarioDropped: { operarioId, obraId in
                     Task { await dailyState.assignOperario(operarioId, toObra: obraId) }
-                }
+                },
+                position: $mapPosition
             )
             .ignoresSafeArea()
 
@@ -41,7 +50,8 @@ struct MainView: View {
                         rightPanelTab = .operarios
                         showRightPanel = true
                     },
-                    onShowHistorial: { showHistorial = true }
+                    onShowHistorial: { showHistorial = true },
+                    onShowSearch: { showSearch = true }
                 )
 
                 Spacer()
@@ -94,6 +104,21 @@ struct MainView: View {
         }
         .sheet(isPresented: $showHistorial) {
             HistorialView()
+        }
+        .sheet(isPresented: $showSearch) {
+            SearchView(
+                dailyState: dailyState,
+                onObraSelected: { obra in selectedObra = obra },
+                onOperarioSelected: { op in selectedOperario = op },
+                onCenterMap: { coord in
+                    withAnimation {
+                        mapPosition = .region(MKCoordinateRegion(
+                            center: coord,
+                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                        ))
+                    }
+                }
+            )
         }
         .task {
             await dailyState.loadDay()
