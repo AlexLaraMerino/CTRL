@@ -5,13 +5,7 @@ struct MapaView: View {
     let dailyState: DailyStateManager
     let onObraSelected: (Obra) -> Void
     let onOperarioDropped: (String, String) -> Void
-
-    @State private var position: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 40.0, longitude: -3.7),
-            span: MKCoordinateSpan(latitudeDelta: 8, longitudeDelta: 8)
-        )
-    )
+    @Binding var position: MapCameraPosition
 
     // Long-press state
     @State private var pinnedCoordinate: CLLocationCoordinate2D?

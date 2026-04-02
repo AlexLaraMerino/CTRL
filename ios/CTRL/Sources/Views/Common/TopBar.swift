@@ -8,13 +8,21 @@ struct TopBar: View {
     let onShowObras: () -> Void
     let onShowOperarios: () -> Void
     let onShowHistorial: () -> Void
+    let onShowSearch: () -> Void
 
     var body: some View {
         HStack {
-            // Izquierda: botón calendario
-            Button(action: onToggleLeft) {
-                Image(systemName: "calendar")
-                    .font(.title2)
+            // Izquierda: botón calendario + búsqueda
+            HStack(spacing: 12) {
+                Button(action: onToggleLeft) {
+                    Image(systemName: "calendar")
+                        .font(.title2)
+                }
+
+                Button(action: onShowSearch) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.title2)
+                }
             }
             .padding(.leading)
 
