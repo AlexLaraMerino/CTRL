@@ -1,0 +1,23 @@
+# Caddyfile para CTRL API
+# Caddy gestiona HTTPS automáticamente con Let's Encrypt
+#
+# Instalación en Windows:
+#   1. Descargar Caddy desde https://caddyserver.com/download
+#   2. Copiar caddy.exe a C:\caddy\
+#   3. Copiar este Caddyfile a C:\caddy\Caddyfile
+#   4. Ejecutar: caddy run --config C:\caddy\Caddyfile
+#   5. Para servicio Windows: caddy install (registra Caddy como servicio)
+#
+# Reemplaza ctrl.tudominio.com por el dominio real de la empresa.
+# Si no tienes dominio, usa la IP directa con HTTPS autofirmado (ver abajo).
+
+# Opción A: Con dominio (HTTPS automático con Let's Encrypt)
+ctrl.tudominio.com {
+    reverse_proxy localhost:8000
+}
+
+# Opción B: Sin dominio, HTTPS con certificado autofirmado (descomentar y comentar opción A)
+# :443 {
+#     tls internal
+#     reverse_proxy localhost:8000
+# }

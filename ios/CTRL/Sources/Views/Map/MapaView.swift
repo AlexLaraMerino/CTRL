@@ -9,6 +9,7 @@ struct MapaView: View {
 
     // Long-press state
     @State private var pinnedCoordinate: CLLocationCoordinate2D?
+    @State private var pinnedAddress: String?
     @State private var showNewObraForm = false
 
     var body: some View {
@@ -46,13 +47,16 @@ struct MapaView: View {
                         }
                     }
 
-                    // Chinchetas de operarios en ruta (verde)
+                    // Operarios en ruta (verde, animados)
                     ForEach(operariosRuta, id: \.asignacion.id) { item in
-                        if let firstObra = firstObraOfRuta(item.asignacion) {
-                            Annotation(
-                                "\(item.operario.nombre) (ruta)",
-                                coordinate: firstObra
-                            ) {
+                        let coords = routeCoordinates(for: item.asignacion)
+                        if coords.count >= 2 {
+                            AnimatedRouteMarker(
+                                operarioName: item.operario.nombre,
+                                routeCoordinates: coords
+                            )
+                        } else if let first = coords.first {
+                            Annotation(item.operario.nombre, coordinate: first) {
                                 OperarioPin(nombre: item.operario.nombre, isRuta: true)
                             }
                         }
@@ -97,6 +101,10 @@ struct MapaView: View {
                         },
                         onDismiss: {
                             pinnedCoordinate = nil
+                            pinnedAddress = nil
+                        },
+                        onAddressResolved: { addr in
+                            pinnedAddress = addr
                         }
                     )
                     .padding(.bottom, 24)
@@ -108,9 +116,11 @@ struct MapaView: View {
             if let coord = pinnedCoordinate {
                 ObraFormView(
                     prefillLatitud: coord.latitude,
-                    prefillLongitud: coord.longitude
+                    prefillLongitud: coord.longitude,
+                    prefillDireccion: pinnedAddress
                 ) {
                     pinnedCoordinate = nil
+                    pinnedAddress = nil
                     Task { await dailyState.loadDay() }
                 }
             }
@@ -145,10 +155,11 @@ struct MapaView: View {
             }
     }
 
-    private func firstObraOfRuta(_ asig: Asignacion) -> CLLocationCoordinate2D? {
-        guard let rutaIds = asig.obrasRuta, let firstId = rutaIds.first,
-              let obra = dailyState.obras.first(where: { $0.id == firstId }) else { return nil }
-        return obra.coordinate
+    private func routeCoordinates(for asig: Asignacion) -> [CLLocationCoordinate2D] {
+        guard let rutaIds = asig.obrasRuta else { return [] }
+        return rutaIds.compactMap { id in
+            dailyState.obras.first(where: { $0.id == id })?.coordinate
+        }
     }
 }
 
@@ -158,6 +169,10 @@ struct CoordinateCard: View {
     let coordinate: CLLocationCoordinate2D
     let onCreateObra: () -> Void
     let onDismiss: () -> Void
+    var onAddressResolved: ((String) -> Void)?
+
+    @State private var address: String?
+    @State private var isGeocoding = false
 
     var body: some View {
         HStack(spacing: 16) {
@@ -165,8 +180,22 @@ struct CoordinateCard: View {
                 Text("Ubicación seleccionada")
                     .font(.subheadline.bold())
 
+                if let address {
+                    Text(address)
+                        .font(.caption)
+                        .foregroundStyle(.primary)
+                } else if isGeocoding {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                        Text("Buscando dirección...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Text(String(format: "%.5f, %.5f", coordinate.latitude, coordinate.longitude))
-                    .font(.caption.monospaced())
+                    .font(.caption2.monospaced())
                     .foregroundStyle(.secondary)
             }
 
@@ -191,6 +220,37 @@ struct CoordinateCard: View {
         .padding(16)
         .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 14))
         .shadow(radius: 8)
+        .task {
+            await reverseGeocode()
+        }
+    }
+
+    private func reverseGeocode() async {
+        isGeocoding = true
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        do {
+            let placemarks = try await CLGeocoder().reverseGeocodeLocation(location)
+            if let pm = placemarks.first {
+                let parts = [
+                    pm.thoroughfare,
+                    pm.subThoroughfare,
+                    pm.locality,
+                    pm.administrativeArea
+                ].compactMap { $0 }
+                let result = parts.joined(separator: ", ")
+                await MainActor.run {
+                    address = result.isEmpty ? nil : result
+                    isGeocoding = false
+                    if let addr = address {
+                        onAddressResolved?(addr)
+                    }
+                }
+            } else {
+                await MainActor.run { isGeocoding = false }
+            }
+        } catch {
+            await MainActor.run { isGeocoding = false }
+        }
     }
 }
 

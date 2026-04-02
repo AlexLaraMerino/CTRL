@@ -106,6 +106,11 @@ struct MainView: View {
         }
         .task {
             await dailyState.loadDay()
+            // Polling: refrescar datos cada 30 segundos
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                await dailyState.loadDay()
+            }
         }
     }
 }

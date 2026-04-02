@@ -14,13 +14,19 @@ python -m venv venv
 call venv\Scripts\activate.bat
 
 REM 2. Instalar dependencias
-echo [2/5] Instalando dependencias...
+echo [2/6] Instalando dependencias...
 pip install -r requirements.txt
-pip install asyncpg
 
-REM 3. Configurar .env
+REM 3. Crear base de datos PostgreSQL
+echo [3/6] Verificando PostgreSQL...
+echo Si PostgreSQL esta instalado, crea la base de datos con:
+echo   psql -U postgres -c "CREATE DATABASE ctrl_db;"
+echo (Si ya existe, puedes ignorar este paso)
+echo.
+
+REM 4. Configurar .env
 if not exist .env (
-    echo [3/5] Creando .env desde plantilla...
+    echo [4/6] Creando .env desde plantilla...
     copy .env.example .env
     echo.
     echo *** IMPORTANTE: Edita .env con los valores de tu entorno ***
@@ -30,15 +36,15 @@ if not exist .env (
     echo.
     pause
 ) else (
-    echo [3/5] .env ya existe, saltando...
+    echo [4/6] .env ya existe, saltando...
 )
 
-REM 4. Ejecutar migraciones
-echo [4/5] Ejecutando migraciones de base de datos...
+REM 5. Ejecutar migraciones
+echo [5/6] Ejecutando migraciones de base de datos...
 alembic upgrade head
 
-REM 5. Verificar
-echo [5/5] Verificando arranque...
+REM 6. Verificar
+echo [6/6] Verificando arranque...
 python -c "from app.main import app; print('OK: La API se importa correctamente')"
 
 echo.

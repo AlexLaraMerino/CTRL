@@ -43,6 +43,11 @@ final class DailyStateManager {
 
             let (o, op, a) = try await (obrasTask, operariosTask, asignacionesTask)
 
+            // Guardar en caché local
+            await LocalCache.shared.cacheObras(o)
+            await LocalCache.shared.cacheOperarios(op)
+            await LocalCache.shared.cacheAsignaciones(a, fecha: fecha)
+
             await MainActor.run {
                 self.obras = o
                 self.operarios = op
@@ -50,8 +55,20 @@ final class DailyStateManager {
                 self.isLoading = false
             }
         } catch {
+            // Sin conexión: intentar cargar desde caché
+            let cachedObras = await LocalCache.shared.loadObras()
+            let cachedOps = await LocalCache.shared.loadOperarios()
+            let cachedAsig = await LocalCache.shared.loadAsignaciones(fecha: fecha)
+
             await MainActor.run {
-                self.error = error.localizedDescription
+                if !cachedObras.isEmpty {
+                    self.obras = cachedObras
+                    self.operarios = cachedOps
+                    self.asignaciones = cachedAsig
+                    self.error = "Sin conexión — datos de la última sesión"
+                } else {
+                    self.error = "Sin conexión y sin datos en caché"
+                }
                 self.isLoading = false
             }
         }

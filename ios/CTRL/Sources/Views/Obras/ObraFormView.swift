@@ -4,6 +4,7 @@ struct ObraFormView: View {
     var existingObra: Obra?
     var prefillLatitud: Double?
     var prefillLongitud: Double?
+    var prefillDireccion: String?
     let onSaved: () -> Void
 
     @State private var nombre = ""
@@ -108,12 +109,15 @@ struct ObraFormView: View {
     }
 
     private func loadExisting() {
-        // Coordenadas desde long-press en el mapa
+        // Datos desde long-press en el mapa
         if let lat = prefillLatitud {
             latitud = String(format: "%.5f", lat)
         }
         if let lng = prefillLongitud {
             longitud = String(format: "%.5f", lng)
+        }
+        if let dir = prefillDireccion {
+            direccion = dir
         }
         guard let obra = existingObra else { return }
         nombre = obra.nombre
