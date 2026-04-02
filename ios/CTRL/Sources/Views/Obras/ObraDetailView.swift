@@ -96,22 +96,33 @@ struct ObraDetailView: View {
                     }
 
                     ForEach(planos) { plano in
-                        Button {
-                            selectedPlano = plano
-                        } label: {
-                            HStack {
-                                Image(systemName: "doc.richtext")
-                                VStack(alignment: .leading) {
-                                    Text(plano.nombre)
-                                        .font(.subheadline)
-                                    Text("v\(plano.version)")
-                                        .font(.caption)
+                        HStack {
+                            Button {
+                                selectedPlano = plano
+                            } label: {
+                                HStack {
+                                    Image(systemName: "doc.richtext")
+                                    VStack(alignment: .leading) {
+                                        Text(plano.nombre)
+                                            .font(.subheadline)
+                                        Text("v\(plano.version)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
                                         .foregroundStyle(.secondary)
                                 }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.secondary)
                             }
+                            .buttonStyle(.borderless)
+
+                            Button {
+                                Task { await deletePlano(plano) }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.borderless)
                         }
                     }
 
@@ -258,5 +269,13 @@ struct ObraDetailView: View {
                 isUploading = false
             }
         }
+    }
+
+    private func deletePlano(_ plano: Plano) async {
+        do {
+            try await APIClient.shared.deletePlano(planoId: plano.id)
+            let updatedPlanos = try await APIClient.shared.listPlanos(obraId: obra.id)
+            await MainActor.run { planos = updatedPlanos }
+        } catch {}
     }
 }

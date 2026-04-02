@@ -185,3 +185,36 @@ async def upload_anotacion(
     await db.commit()
     await db.refresh(plano)
     return _to_response(plano)
+
+
+@router.delete("/planos/{plano_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_plano(
+    plano_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: str = Depends(get_current_user),
+) -> None:
+    """Elimina un plano y sus ficheros del servidor."""
+    plano = await db.get(Plano, plano_id)
+    if not plano:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plano no encontrado")
+
+    # Eliminar ficheros de disco
+    original_path = settings.ctrl_data_root / plano.ruta_original
+    if original_path.exists():
+        original_path.unlink()
+    if plano.ruta_anotada:
+        anotada_path = settings.ctrl_data_root / plano.ruta_anotada
+        if anotada_path.exists():
+            anotada_path.unlink()
+
+    await register_event(
+        db,
+        usuario=user,
+        tipo_accion="plano",
+        entidad_tipo="plano",
+        entidad_id=plano.id,
+        descripcion=f"Plano eliminado: {plano.nombre}",
+        datos_anteriores={"nombre": plano.nombre, "obra_id": plano.obra_id},
+    )
+    await db.delete(plano)
+    await db.commit()
