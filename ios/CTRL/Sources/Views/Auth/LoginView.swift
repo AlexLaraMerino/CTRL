@@ -4,6 +4,7 @@ struct LoginView: View {
     @Environment(AuthManager.self) private var auth
     @State private var username = ""
     @State private var password = ""
+    @State private var rememberSession = false
 
     var body: some View {
         VStack(spacing: 32) {
@@ -35,6 +36,9 @@ struct LoginView: View {
                     .textFieldStyle(.roundedBorder)
                     .textContentType(.password)
 
+                Toggle("Mantener sesión iniciada", isOn: $rememberSession)
+                    .font(.subheadline)
+
                 if let error = auth.errorMessage {
                     Text(error)
                         .foregroundStyle(.red)
@@ -42,7 +46,7 @@ struct LoginView: View {
                 }
 
                 Button {
-                    Task { await auth.login(username: username, password: password) }
+                    Task { await auth.login(username: username, password: password, remember: rememberSession) }
                 } label: {
                     if auth.isLoading {
                         ProgressView()
